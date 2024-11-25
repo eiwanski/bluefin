@@ -22,3 +22,10 @@ fc-cache --system-only --really-force --verbose
 curl -s https://api.github.com/repos/yuezk/GlobalProtect-openconnect/releases/latest | jq -r '.assets[] | select(.name | contains ("x86_64.rpm")) | .browser_download_url' | head -n 1 | xargs -I {} wget -O /tmp/globalprotect-openconnect-latest.x86_64.rpm {}
 rpm-ostree install /tmp/globalprotect-openconnect-latest.x86_64.rpm
 rm -r -f /tmp/globalprotect-openconnect-latest.x86_64.rpm
+
+# Hack nerd-font
+curl -s https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | jq -r '.assets[] | select(.name | contains ("Hack.zip")) | .browser_download_url' | head -n 1 | xargs -I {} wget -O /tmp/hack-nf-latest.zip {}
+unzip -qo /tmp/hack-nf-latest.zip -d /tmp/hack-nf-fonts
+mkdir -p /usr/share/fonts/hack-nf-fonts
+mv /tmp/hack-nf-fonts/* /usr/share/fonts/hack-nf-fonts/
+rm -rf /tmp/hack-nf*
