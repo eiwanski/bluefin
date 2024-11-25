@@ -17,3 +17,8 @@ rm -rf /tmp/monaspace-font*
 
 fc-cache -f /usr/share/fonts/monaspace
 fc-cache --system-only --really-force --verbose
+
+# globalproect-openconnect
+curl -s https://api.github.com/repos/yuezk/GlobalProtect-openconnect/releases/latest | jq -r '.assets[] | select(.name | contains ("x86_64.rpm")) | .browser_download_url' | head -n 1 | xargs -I {} wget -O /tmp/globalprotect-openconnect-latest.x86_64.rpm {}
+rpm-ostree install /tmp/globalprotect-openconnect-latest.x86_64.rpm
+rm -r -f /tmp/globalprotect-openconnect-latest.x86_64.rpm
