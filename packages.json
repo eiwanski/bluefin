@@ -117,6 +117,7 @@
 				"incus-agent",
 				"iotop",
 				"kcli",
+				"keychain",
 				"libvirt",
 				"libvirt-nss",
 				"lxc",
