@@ -7,8 +7,9 @@ on:
         default: "['main', 'nvidia']"
         type: string
       brand_name:
-        description: "The Brand Name: bluefin or aurora"
+        description: "The Brand Name: bluefin"
         required: true
+        default: bluefin
         type: string
       stream_name:
         description: "The Fedora Version: gts, stable, or latest"
@@ -76,7 +77,7 @@ jobs:
 
       - name: Upload ISOs and Checksum to Job Artifacts
         if: github.ref_name == 'testing'
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4
         with:
           name: ${{ env.ISO_NAME }}
           path: ${{ steps.upload-directory.outputs.iso-upload-dir }}
@@ -84,7 +85,7 @@ jobs:
           retention-days: 0
           compression-level: 0
           overwrite: true
-        
+
       - name: HWE ISO rename
         if: contains(matrix.image_flavor, 'hwe')
         shell: bash
@@ -116,19 +117,3 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rclone
           rclone copy $SOURCE_DIR R2:bluefin
-
-      - name: Upload ISOs and Checksum to R2 to Aurora Bucket
-        if: github.ref_name == 'main' && contains(matrix.base_name,'aurora')
-        shell: bash
-        env:
-          RCLONE_CONFIG_R2_TYPE: s3
-          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
-          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.AURORA_R2_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.AURORA_R2_SECRET_ACCESS_KEY }}
-          RCLONE_CONFIG_R2_REGION: auto
-          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.AURORA_R2_ENDPOINT }}
-          SOURCE_DIR: ${{ steps.upload-directory.outputs.iso-upload-dir }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rclone
-          rclone copy $SOURCE_DIR R2:aurora-dl
