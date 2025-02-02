@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+echo "::group:: ===$(basename "$0")==="
+
 set -eoux pipefail
 
 curl --retry 3 -Lo /tmp/kind "https://github.com/kubernetes-sigs/kind/releases/latest/download/kind-$(uname)-amd64"
@@ -30,3 +32,5 @@ fc-cache --system-only --really-force --verbose
 curl -s https://api.github.com/repos/yuezk/GlobalProtect-openconnect/releases/latest | jq -r '.assets[] | select(.name | contains ("x86_64.rpm")) | .browser_download_url' | head -n 1 | xargs -I {} wget -O /tmp/globalprotect-openconnect-latest.x86_64.rpm {}
 rpm-ostree install /tmp/globalprotect-openconnect-latest.x86_64.rpm
 rm -r -f /tmp/globalprotect-openconnect-latest.x86_64.rpm
+
+echo "::endgroup::"
