@@ -1,5 +1,5 @@
 repo_organization := "ublue-os"
-rechunker_image := "ghcr.io/hhd-dev/rechunk:v1.0.1"
+rechunker_image := "ghcr.io/hhd-dev/rechunk:v1.2.1"
 iso_builder_image := "ghcr.io/jasonn3/build-container-installer:v1.2.3"
 images := '(
     [bluefin]=bluefin
@@ -134,7 +134,7 @@ build $image="bluefin" $tag="latest" $flavor="main" rechunk="0" ghcr="0" pipelin
     elif [[ "${tag}" =~ gts|stable ]]; then
         akmods_flavor="coreos-stable"
     elif [[ "${tag}" =~ beta ]]; then
-        akmods_flavor="coreos-testing"
+        akmods_flavor="main"
     else
         akmods_flavor="main"
     fi
@@ -560,9 +560,12 @@ build-iso $image="bluefin" $tag="latest" $flavor="main" ghcr="0" pipeline="0":
     iso_build_args=()
     iso_build_args+=("--rm" "--privileged" "--pull=${PULL_POLICY}")
     if [[ "{{ ghcr }}" == "0" ]]; then
-    	iso_build_args+=(--volume "/var/lib/containers/storage:/var/lib/containers/storage")
+    	iso_build_args+=(
+            "--security-opt=label=disable"
+            "--volume=/var/lib/containers/storage:/var/lib/containers/storage"
+        )
     fi
-    iso_build_args+=(--volume "${PWD}:/github/workspace/")
+    iso_build_args+=("--volume=${PWD}:/github/workspace/")
     iso_build_args+=("{{ iso_builder_image }}")
     iso_build_args+=(ARCH="x86_64")
     iso_build_args+=(ENROLLMENT_PASSWORD="universalblue")
@@ -630,9 +633,8 @@ run-iso $image="bluefin" $tag="latest" $flavor="main":
     run_args+=(--device=/dev/kvm)
     run_args+=(--volume "${PWD}/${image_name}_build/${image_name}-${tag}.iso":"/boot.iso")
     run_args+=(docker.io/qemux/qemu-docker)
-    ${PODMAN} run "${run_args[@]}" &
-    xdg-open http://localhost:${port}
-    fg "%podman" || fg "%docker"
+    xdg-open http://localhost:${port} &
+    ${PODMAN} run "${run_args[@]}"
 
 # Test Changelogs
 [group('Changelogs')]
@@ -866,3 +868,28 @@ tag-images image_name="" default_tag="" tags="":
 
     # Show Images
     ${PODMAN} images
+
+# Examples:
+#   > just retag-nvidia-on-ghcr stable-daily stable-daily-41.20250126.3 0
+#   > just retag-nvidia-on-ghcr latest latest-41.20250228.1 0
+#
+# working_tag: The tag of the most recent known good image (e.g., stable-daily-41.20250126.3)
+# stream:      One of latest, stable-daily, stable or gts
+# dry_run:     Only print the skopeo commands instead of running them
+#
+# First generate a PAT with package write access (https://github.com/settings/tokens)
+# and set $GITHUB_USERNAME and $GITHUB_PAT environment variables
+
+# Retag images on GHCR
+[group('Admin')]
+retag-nvidia-on-ghcr working_tag="" stream="" dry_run="1":
+    #!/bin/bash
+    set -euxo pipefail
+    skopeo="echo === skopeo"
+    if [[ "{{ dry_run }}" -ne 1 ]]; then
+        echo "$GITHUB_PAT" | podman login -u $GITHUB_USERNAME --password-stdin ghcr.io
+        skopeo="skopeo"
+    fi
+    for image in bluefin-nvidia-open bluefin-nvidia bluefin-dx-nvidia bluefin-dx-nvidia-open; do
+      $skopeo copy docker://ghcr.io/ublue-os/${image}:{{ working_tag }} docker://ghcr.io/ublue-os/${image}:{{ stream }}
+    done
