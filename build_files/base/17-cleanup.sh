@@ -8,6 +8,7 @@ set -eoux pipefail
 systemctl enable rpm-ostree-countme.service
 systemctl enable tailscaled.service
 systemctl enable dconf-update.service
+systemctl enable ublue-fix-hostname.service
 systemctl --global enable ublue-flatpak-manager.service
 systemctl enable ublue-system-setup.service
 systemctl enable ublue-guest-user.service
@@ -33,6 +34,14 @@ for file in fish htop nvtop; do
         sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applications/"$file".desktop
     fi
 done
+
+
+#Disable autostart behaviour
+rm -f /etc/xdg/autostart/solaar.desktop
+
+#Add the Flathub Flatpak remote and remove the Fedora Flatpak remote
+flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+systemctl disable flatpak-add-fedora-repos.service
 
 # Disable all COPRs and RPM Fusion Repos
 sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo
