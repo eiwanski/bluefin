@@ -6,6 +6,7 @@
 				"adw-gtk3-theme",
 				"bash-color-prompt",
 				"bcache-tools",
+				"bluefin-backgrounds",
 				"bluefin-cli-logos",
 				"bluefin-faces",
 				"bluefin-fastfetch",
@@ -31,7 +32,7 @@
 				"gnome-shell-extension-logo-menu",
 				"gnome-shell-extension-search-light",
 				"gnome-shell-extension-tailscale-gnome-qs",
-                "gnome-tweaks",
+				"gnome-tweaks",
 				"gum",
 				"hplip",
 				"ibus-mozc",
@@ -77,6 +78,8 @@
 				"ublue-brew",
 				"ublue-fastfetch",
 				"ublue-motd",
+				"ublue-polkit-rules",
+				"ublue-setup-services",
 				"uld",
 				"usbmuxd",
 				"wireguard-tools",
@@ -127,8 +130,8 @@
 				"nicstat",
 				"numactl",
 				"osbuild-selinux",
-				"p7zip-plugins",
 				"p7zip",
+				"p7zip-plugins",
 				"podman-bootc",
 				"podman-compose",
 				"podman-machine",
@@ -136,6 +139,7 @@
 				"podmansh",
 				"powerline-fonts",
 				"python3-ramalama",
+				"qemu",
 				"qemu-char-spice",
 				"qemu-device-display-virtio-gpu",
 				"qemu-device-display-virtio-vga",
@@ -144,7 +148,6 @@
 				"qemu-system-x86-core",
 				"qemu-user-binfmt",
 				"qemu-user-static",
-				"qemu",
 				"rocm-hip",
 				"rocm-opencl",
 				"rocm-smi",
@@ -155,8 +158,8 @@
 				"udica",
 				"umoci",
 				"virt-manager",
-				"virt-viewer",
 				"virt-v2v",
+				"virt-viewer",
 				"wireshark",
 				"wireshark-cli",
 				"ydotool"
@@ -164,35 +167,18 @@
 		},
 		"exclude": {
 			"all": [
-				"firefox-langpacks",
+				"fedora-bookmarks",
+				"fedora-chromium-config",
+				"fedora-chromium-config-gnome",
 				"firefox",
+				"firefox-langpacks",
 				"gnome-extensions-app",
 				"gnome-shell-extension-background-logo",
 				"gnome-software-rpm-ostree",
 				"gnome-terminal-nautilus",
-				"podman-docker"
+				"podman-docker",
+				"yelp"
 			],
-			"dx": []
-		}
-	},
-	"40": {
-		"include": {
-			"all": [
-				"epson-inkjet-printer-escpr",
-				"epson-inkjet-printer-escpr2",
-				"ptyxis"
-			],
-			"dx": [
-				"docker-buildx-plugin",
-				"docker-ce",
-				"docker-ce-cli",
-				"docker-compose-plugin",
-				"lxd-agent",
-				"lxd"
-			]
-		},
-		"exclude": {
-			"all": [],
 			"dx": []
 		}
 	},
@@ -213,6 +199,7 @@
 	"42": {
 		"include": {
 			"all": [
+        "bazaar",
         "google-noto-fonts-all",
         "uupd"
       ],
