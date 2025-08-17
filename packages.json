@@ -142,7 +142,6 @@
 				"podman-tui",
 				"podmansh",
 				"powerline-fonts",
-				"python3-ramalama",
 				"qemu",
 				"qemu-char-spice",
 				"qemu-device-display-virtio-gpu",
