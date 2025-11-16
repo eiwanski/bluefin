@@ -1,13 +1,10 @@
 #!/usr/bin/bash
 
-set -eou pipefail
-
-mkdir -p /var/roothome
+set -xeou pipefail
 
 echo "::group:: Copy Files"
 
 # Copy Files to Image
-cp /ctx/packages.json /tmp/packages.json
 rsync -rvK /ctx/system_files/dx/ /
 
 mkdir -p /tmp/scripts/helpers
@@ -23,32 +20,22 @@ sysctl -p
 # See:
 #   - https://github.com/ublue-os/bluefin/issues/2365
 #   - https://github.com/devcontainers/features/issues/1235
-mkdir -p /etc/modules-load.d && cat >>/etc/modules-load.d/ip_tables.conf <<EOF
+mkdir -p /etc/modules-load.d
+tee /etc/modules-load.d/ip_tables.conf <<EOF
 iptable_nat
 EOF
 
-# Generate image-info.json (Not Needed?)
-# /ctx/build_files/shared/image-info.sh
+# Install Packages and set up DX
+/ctx/build_files/dx/00-dx.sh
 
-# COPR Repos
-/ctx/build_files/dx/01-install-copr-repos-dx.sh
-
-# Install AKMODS
-/ctx/build_files/dx/02-install-kernel-akmods-dx.sh
-
-# Install Packages
-/ctx/build_files/dx/03-packages-dx.sh
-
-# Fetch Install
-/ctx/build_files/dx/04-override-install-dx.sh
-
-# Systemd and Disable Repos
-/ctx/build_files/dx/09-cleanup-dx.sh
+# Validate all repos are disabled before committing
+/ctx/build_files/shared/validate-repos.sh
 
 # Clean Up
 echo "::group:: Cleanup"
 /ctx/build_files/shared/clean-stage.sh
-mkdir -p /var/tmp &&
-    chmod -R 1777 /var/tmp
-ostree container commit
+
 echo "::endgroup::"
+
+# dx specific tests
+/ctx/build_files/dx/01-tests-dx.sh

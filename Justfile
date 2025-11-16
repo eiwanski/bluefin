@@ -1,23 +1,12 @@
 repo_organization := "ublue-os"
-rechunker_image := "ghcr.io/hhd-dev/rechunk:v1.2.3@sha256:51ffc4c31ac050c02ae35d8ba9e5f5e518b76cfc9b37372df4b881974978443c"
-iso_builder_image := "ghcr.io/jasonn3/build-container-installer:v1.3.0@sha256:c5a44ee1b752fd07309341843f8d9f669d0604492ce11b28b966e36d8297ad29"
+rechunker_image := "ghcr.io/hhd-dev/rechunk:v1.2.4@sha256:8a84bd5a029681aa8db523f927b7c53b5aded9b078b81605ac0a2fedc969f528"
 images := '(
     [bluefin]=bluefin
     [bluefin-dx]=bluefin-dx
 )'
 flavors := '(
     [main]=main
-    [nvidia]=nvidia
     [nvidia-open]=nvidia-open
-    [hwe]=hwe
-    [hwe-nvidia]=hwe-nvidia
-    [hwe-nvidia-open]=hwe-nvidia-open
-    [asus]=asus
-    [asus-nvidia]=asus-nvidia
-    [asus-nvidia-open]=asus-nvidia-open
-    [surface]=surface
-    [surface-nvidia]=surface-nvidia
-    [surface-nvidia-open]=surface-nvidia-open
 
     # Temporary for LTS to anaconda build-iso
     [gdx]=gdx
@@ -30,6 +19,7 @@ tags := '(
 
     # Temporary for LTS to anaconda build-iso
     [lts]=lts
+    [lts-hwe]=lts-hwe
 )'
 export SUDO_DISPLAY := if `if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then echo true; fi` == "true" { "true" } else { "false" }
 export SUDOIF := if `id -u` == "0" { "" } else if SUDO_DISPLAY == "true" { "sudo --askpass" } else { "sudo" }
@@ -106,10 +96,6 @@ validate $image $tag $flavor:
         echo "Invalid flavor..."
         exit 1
     fi
-    if [[ ! "$checktag" =~ latest && "$checkflavor" =~ hwe|asus|surface ]]; then
-        echo "HWE images are only built on latest..."
-        exit 1
-    fi
 
 # Build Image
 [group('Image')]
@@ -128,12 +114,6 @@ build $image="bluefin" $tag="latest" $flavor="main" rechunk="0" ghcr="0" pipelin
     # Base Image
     base_image_name="silverblue"
 
-    # Target
-    if [[ "${image}" =~ dx ]]; then
-        target="dx"
-    else
-        target="base"
-    fi
 
     # AKMODS Flavor and Kernel Version
     if [[ "${flavor}" =~ hwe ]]; then
@@ -169,8 +149,6 @@ build $image="bluefin" $tag="latest" $flavor="main" rechunk="0" ghcr="0" pipelin
     fi
     if [[ "${flavor}" =~ nvidia-open ]]; then
         {{ just }} verify-container "akmods-nvidia-open:${akmods_flavor}-${fedora_version}-${kernel_release}"
-    elif [[ "${flavor}" =~ nvidia ]]; then
-        {{ just }} verify-container "akmods-nvidia:${akmods_flavor}-${fedora_version}-${kernel_release}"
     fi
 
     # Get Version
@@ -193,6 +171,11 @@ build $image="bluefin" $tag="latest" $flavor="main" rechunk="0" ghcr="0" pipelin
 
     # Build Arguments
     BUILD_ARGS=()
+    # Target
+    if [[ "${image}" =~ dx ]]; then
+        BUILD_ARGS+=("--build-arg" "IMAGE_FLAVOR=dx")
+        target="dx"
+    fi
     BUILD_ARGS+=("--build-arg" "AKMODS_FLAVOR=${akmods_flavor}")
     BUILD_ARGS+=("--build-arg" "BASE_IMAGE_NAME=${base_image_name}")
     BUILD_ARGS+=("--build-arg" "FEDORA_MAJOR_VERSION=${fedora_version}")
@@ -215,21 +198,21 @@ build $image="bluefin" $tag="latest" $flavor="main" rechunk="0" ghcr="0" pipelin
     LABELS+=("--label" "ostree.linux=${kernel_release}")
     LABELS+=("--label" "io.artifacthub.package.readme-url=https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/README.md")
     LABELS+=("--label" "io.artifacthub.package.logo-url=https://avatars.githubusercontent.com/u/120078124?s=200&v=4")
-    LABELS+=("--label" "org.opencontainers.image.description=An interpretation of the Ubuntu spirit built on Fedora technology")
+    LABELS+=("--label" "org.opencontainers.image.description=The next generation Linux workstation, designed for reliability, performance, and sustainability.")
     LABELS+=("--label" "containers.bootc=1")
     LABELS+=("--label" "org.opencontainers.image.created=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)")
     LABELS+=("--label" "org.opencontainers.image.source=https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/Containerfile")
     LABELS+=("--label" "org.opencontainers.image.url=https://projectbluefin.io")
     LABELS+=("--label" "org.opencontainers.image.vendor={{ repo_organization }}")
     LABELS+=("--label" "io.artifacthub.package.deprecated=false")
-    LABELS+=("--label" "io.artifacthub.package.keywords=bootc,fedora,bluefin,ublue,universal-blue")
+    LABELS+=("--label" "io.artifacthub.package.keywords=bootc,bluefin,ublue,universal-blue")
     LABELS+=("--label" "io.artifacthub.package.maintainers=[{\"name\": \"castrojo\", \"email\": \"jorge.castro@gmail.com\"}]")
 
     echo "::endgroup::"
     echo "::group:: Build Container"
 
     # Build Image
-    PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --target "${target}" --tag localhost/"${image_name}:${tag}" --file Containerfile)
+    PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --tag localhost/"${image_name}:${tag}" --file Containerfile)
 
     # Add GitHub token secret if available (for CI/CD)
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
@@ -509,7 +492,7 @@ build-iso $image="bluefin" $tag="latest" $flavor="main" ghcr="0" pipeline="0":
     # if [[ "$tag" != lts ]]; then
     #     FEDORA_VERSION=$(${PODMAN} inspect ${IMAGE_FULL} | jq -r '.[]["Config"]["Labels"]["ostree.linux"]' | grep -oP 'fc\K[0-9]+')
     # else
-    FEDORA_VERSION=41
+    FEDORA_VERSION=42
     # fi
 
     # Load Image into rootful podman
@@ -584,7 +567,6 @@ build-iso $image="bluefin" $tag="latest" $flavor="main" ghcr="0" pipeline="0":
 
     curl -Lo iso_files/bluefin.repo https://copr.fedorainfracloud.org/coprs/ublue-os/bluefin/repo/fedora-${FEDORA_VERSION}/ublue-os-bluefin-fedora-${FEDORA_VERSION}.repo
     iso_build_args+=("--volume=${PWD}:/github/workspace/")
-    iso_build_args+=("{{ iso_builder_image }}")
     iso_build_args+=(ARCH="$(uname -m)")
     iso_build_args+=(REPOS="/github/workspace/iso_files/bluefin.repo /etc/yum.repos.d/fedora.repo /etc/yum.repos.d/fedora-updates.repo")
     iso_build_args+=(ENROLLMENT_PASSWORD="universalblue")
@@ -788,7 +770,7 @@ generate-build-tags image="bluefin" tag="latest" flavor="main" kernel_pin="" ghc
     set -eou pipefail
 
     TODAY="$(date +%A)"
-    WEEKLY="Sunday"
+    WEEKLY="Tuesday"
     if [[ {{ ghcr }} == "0" ]]; then
         rm -f /tmp/manifest.json
     fi
@@ -872,18 +854,6 @@ tag-images image_name="" default_tag="" tags="":
         ${PODMAN} tag $IMAGE {{ image_name }}:${tag}
     done
 
-    # HWE Tagging
-    if [[ "{{ image_name }}" =~ hwe ]]; then
-
-        image_name="{{ image_name }}"
-        asus_name="${image_name/hwe/asus}"
-        surface_name="${image_name/hwe/surface}"
-
-        for tag in {{ tags }}; do
-            ${PODMAN} tag "${IMAGE}" "${asus_name}":${tag}
-            ${PODMAN} tag "${IMAGE}" "${surface_name}":${tag}
-        done
-    fi
 
     # Show Images
     ${PODMAN} images
@@ -909,6 +879,6 @@ retag-nvidia-on-ghcr working_tag="" stream="" dry_run="1":
         echo "$GITHUB_PAT" | podman login -u $GITHUB_USERNAME --password-stdin ghcr.io
         skopeo="skopeo"
     fi
-    for image in bluefin-nvidia-open bluefin-nvidia bluefin-dx-nvidia bluefin-dx-nvidia-open; do
+    for image in bluefin-nvidia-open bluefin-dx-nvidia-open; do
       $skopeo copy docker://ghcr.io/ublue-os/${image}:{{ working_tag }} docker://ghcr.io/ublue-os/${image}:{{ stream }}
     done
