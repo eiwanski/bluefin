@@ -63,4 +63,18 @@ glib-compile-schemas --strict /tmp/bluefin-schema-test
 echo "Compiling gschema to include bluefin setting overrides"
 glib-compile-schemas /usr/share/glib-2.0/schemas &>/dev/null
 
+# Hack nerd-font
+curl -s -o /tmp/hack-nf-latest.zip -L https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip
+unzip -qo /tmp/hack-nf-latest.zip -d /tmp/hack-nf-fonts
+mkdir -p /usr/share/fonts/hack-nf-fonts
+mv /tmp/hack-nf-fonts/* /usr/share/fonts/hack-nf-fonts/
+rm -rf /tmp/hack-nf*
+fc-cache -f /usr/share/fonts/hack-nf-fonts
+fc-cache --system-only --really-force --verbose
+
+# globalproect-openconnect
+curl -s -o /tmp/globalprotect-openconnect-latest.x86_64.rpm -L $(curl -s https://api.github.com/repos/yuezk/GlobalProtect-openconnect/releases/latest | jq -r '.assets[] | select(.name | contains ("x86_64.rpm")) | .browser_download_url' | head -n 1)
+rpm-ostree install /tmp/globalprotect-openconnect-latest.x86_64.rpm
+rm -r -f /tmp/globalprotect-openconnect-latest.x86_64.rpm
+
 echo "::endgroup::"
