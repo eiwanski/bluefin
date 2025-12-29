@@ -14,6 +14,7 @@ FEDORA_PACKAGES=(
     bcc
     bpftop
     bpftrace
+    byobu
     cascadia-code-fonts
     cockpit-bridge
     cockpit-machines
@@ -30,6 +31,7 @@ FEDORA_PACKAGES=(
     git-subtree
     git-svn
     iotop
+    keychain
     libvirt
     libvirt-nss
     nicstat
@@ -63,6 +65,8 @@ FEDORA_PACKAGES=(
     virt-manager
     virt-v2v
     virt-viewer
+    wireshark
+    wireshark-cli
     ydotool
 )
 
