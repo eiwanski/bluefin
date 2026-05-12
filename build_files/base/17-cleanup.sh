@@ -4,9 +4,6 @@ echo "::group:: ===$(basename "$0")==="
 
 set -eoux pipefail
 
-# Prevent Distrobox containers from being updated via the background service
-sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service
-
 # Setup Systemd
 # systemctl --global enable bazaar.service
 systemctl --global enable podman-auto-update.timer
@@ -19,10 +16,7 @@ systemctl enable rpm-ostree-countme.service
 systemctl enable tailscaled.service
 systemctl enable ublue-system-setup.service
 
-# run flatpak preinstall once at startup
-if [[ "$(rpm -E %fedora)" -ge "42" ]]; then
-  systemctl enable flatpak-preinstall.service
-fi
+systemctl enable flatpak-preinstall.service
 
 # Updater
 systemctl enable uupd.timer
