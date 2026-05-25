@@ -15,8 +15,7 @@ tags := '(
     [latest]=latest
     [beta]=beta
 )'
-export SUDO_DISPLAY := if `if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then echo true; fi` == "true" { "true" } else { "false" }
-export SUDOIF := if `id -u` == "0" { "" } else if SUDO_DISPLAY == "true" { "sudo --askpass" } else { "sudo" }
+export SUDOIF := if `id -u` == "0" { "" } else { "sudo" }
 export PODMAN := if path_exists("/usr/bin/podman") == "true" { env("PODMAN", "/usr/bin/podman") } else if path_exists("/usr/bin/docker") == "true" { env("PODMAN", "docker") } else { env("PODMAN", "exit 1 ; ") }
 export PULL_POLICY := if PODMAN =~ "docker" { "missing" } else { "newer" }
 just := just_executable()
@@ -678,6 +677,34 @@ tag-images image_name="" default_tag="" tags="":
 
     # Show Images
     ${PODMAN} images
+
+# Extract Container and generate SBOM
+[group('Utility')]
+gen-sbom $image="bluefin" $tag="latest" $flavor="main" $syft_cmd="syft":
+    #!/usr/bin/bash
+    set -eoux pipefail
+
+    image_name=$({{ just }} image_name '{{ image }}' '{{ tag }}' '{{ flavor }}')
+
+    OUT_DIR="sbom_out/${image_name}"
+    mkdir -p "${OUT_DIR}"
+
+    # We have to do it this stupid way because we are OOMing on github runners
+    # https://github.com/anchore/syft/issues/3800
+    ${PODMAN} container create --replace --name ${image_name} "${image_name}:${tag}"
+
+    ROOTFS="${OUT_DIR}/rootfs"
+    mkdir -p "${ROOTFS}"
+
+    ${PODMAN} export ${image_name} | tar -C "${ROOTFS}" -xf -
+    ${PODMAN} container rm ${image_name}
+
+    SBOM="${OUT_DIR}/sbom.json"
+
+    ${syft_cmd} --source-name "${image_name}:${tag}" "${OUT_DIR}" -o syft-json=${SBOM}
+    du -sh "${SBOM}"
+
+    rm -rf "${ROOTFS}"
 
 # DNF CI package cache
 [group('Utility')]
