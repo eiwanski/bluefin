@@ -3,7 +3,7 @@
 set -ouex pipefail
 
 # Copy the contents of system_files/ of the git repo to /
-cp -avf "/ctx/system_files"/. /
+# cp -avf "/ctx/system_files"/. /
 
 ### Install packages
 
@@ -13,7 +13,11 @@ cp -avf "/ctx/system_files"/. /
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # this installs a package from fedora repos
-dnf5 install -y tmux
+dnf5 install -y \
+    byobu \
+    keychain \
+    wireshark \
+    wireshark-cli
 
 # Use a COPR Example:
 #
@@ -23,5 +27,9 @@ dnf5 install -y tmux
 # dnf5 -y copr disable ublue-os/staging
 
 #### Example for enabling a System Unit File
+# systemctl enable podman.socket
 
-systemctl enable podman.socket
+# Install globalprotect-openconnect
+curl -s -o /tmp/globalprotect-openconnect-latest.x86_64.rpm -L $(curl -s https://api.github.com/repos/yuezk/GlobalProtect-openconnect/releases/latest | jq -r '.assets[] | select(.name | contains ("x86_64.rpm")) | .browser_download_url' | head -n 1)
+rpm-ostree install /tmp/globalprotect-openconnect-latest.x86_64.rpm
+rm -r -f /tmp/globalprotect-openconnect-latest.x86_64.rpm
